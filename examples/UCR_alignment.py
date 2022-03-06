@@ -56,10 +56,11 @@ def argparser():
                         help="batch size")
     parser.add_argument('--lr', type=float, default=0.0001,
                         help="learning rate")
+    parser.add_argument('--ddir', type=str, default="ECGFiveDays", help="dataset dir name at examples/data")
     args = parser.parse_args()
     return args
 
-def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
+def run_UCR_alignment(args):
     """
     Run an example of the full training pipline for DTAN on a UCR dataset.
     After training:
@@ -76,6 +77,8 @@ def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
     print(args)
 
     # Data
+    dataset_name=args.ddir
+    print(dataset_name)
     datadir = "data"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     exp_name = f"{dataset_name}_exp"
