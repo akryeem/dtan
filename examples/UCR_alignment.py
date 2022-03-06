@@ -57,6 +57,7 @@ def argparser():
     parser.add_argument('--lr', type=float, default=0.0001,
                         help="learning rate")
     parser.add_argument('--ddir', type=str, default="ECGFiveDays", help="dataset dir name at examples/data")
+    parser.add_argument('--dpath', type=str, default="data", help="dataset dir path, default examples/data")
     args = parser.parse_args()
     return args
 
@@ -79,7 +80,7 @@ def run_UCR_alignment(args):
     # Data
     dataset_name=args.ddir
     print(dataset_name)
-    datadir = "data"
+    datadir = args.dpath #"data/UCR/UCR_TS_Archive_2015"
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     exp_name = f"{dataset_name}_exp"
     # Plotting flag
