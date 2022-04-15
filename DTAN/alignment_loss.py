@@ -20,7 +20,7 @@ def alignment_loss(X_trasformed, labels, thetas, n_channels, DTANargs):
     for i in n_classes:
         X_within_class = X_trasformed[labels==i]
         ##akryeem: add debug breakpoint to query variable values
-        pdb.set_trace()
+        ##pdb.set_trace()
 
         if n_channels == 1:
             # Single channel variance across samples
