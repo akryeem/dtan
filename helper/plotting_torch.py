@@ -66,10 +66,12 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
         if channel == 0:
             ax2 = f.add_subplot(rows, cols, plot_idx)
         if n_channels == 1:
-            ax2.plot(t, X_mean[channel], 'r',label=f'Average signal-channel:{channel}')
+            #ax2.plot(t, X_mean[channel], 'r',label=f'Average signal-channel:{channel}')
+            ax2.plot(t, X_mean[channel], 'r')
             ax2.fill_between(t, upper[channel], lower[channel], color='r', alpha=0.2, label=r"$\pm\sigma$")
         else:
-            ax2.plot(t, X_mean[channel,:], label=f'Average signal-channel:{channel}')
+            #ax2.plot(t, X_mean[channel,:], label=f'Average signal-channel:{channel}')
+            ax2.plot(t, X_mean[channel,:])
 
         plt.legend(loc='upper right', fontsize=12, frameon=True)
         plt.xlim(0, signal_len)
