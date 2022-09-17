@@ -97,7 +97,7 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
         if channel == 0:
             ax4 = f.add_subplot(rows, cols, plot_idx)
         # plot transformed signal
-        ax4.plot(t, X_mean_t[channel,:], label=f'Average signal-channel:{channel}')
+        #ax4.plot(t, X_mean_t[channel,:], label=f'Average signal-channel:{channel}')
         if n_channels == 1:
             ax4.fill_between(t, upper_t[channel], lower_t[channel], color='#539caf', alpha=0.6, label=r"$\pm\sigma$")
 
