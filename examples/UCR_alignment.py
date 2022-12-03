@@ -108,6 +108,7 @@ def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
 
     # Train model
     model = train(train_loader, validation_loader, DTANargs, Experiment, print_model=True)
+    torch.save(model.state_dict(), f'../../checkpoints/{dataset_name}_model_state_dict.pth')
 
     # Plot aligned signals
     if plot_signals_flag:
