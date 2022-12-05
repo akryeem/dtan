@@ -7,33 +7,77 @@ author: ronsha
 
 # local
 from helper.util import get_dataset_info
-
+import csv
 import torch
 from torch.utils.data import TensorDataset, DataLoader
 from torch.utils.data.sampler import SubsetRandomSampler
 from tslearn.datasets import UCR_UEA_datasets
 import numpy as np
 import os
+from tslearn.preprocessing import TimeSeriesResampler
+def interpolate_signal(list1, resample_len = 700):
+  tmp =  list1.reshape(list1.size)
+  resample_list1 = TimeSeriesResampler(sz=resample_len).fit_transform(tmp)
+#  print(resample_list1[0])
+  #newList = np.array(resample_list1[0])
+ # newList = newList.reshape(resample_len)
+  #print(list1)
+  #print(newList.tolist())
+  tmp = resample_list1.reshape(resample_len)
+  return tmp
+
 
 def load_txt_file(datadir, dataset):
     '''
     Loads UCR text format - useful when working with the data provided by the UCR archivce site. 
     returns numpy array [N_samples,Width,Channels]
     '''
+    NEWLEN = 801
+
     fdir = os.path.join(datadir, dataset)
     assert os.path.isdir(fdir), f"{fdir}. {dataset} could not be found in {datadir}"
     # again, for file names
     f_name = os.path.join(fdir, dataset)
-
-    data_train = np.loadtxt(f_name+'_TRAIN',delimiter=',')
-    data_test_val = np.loadtxt(f_name+'_TEST',delimiter=',')
-
-    # get data
-    X_train = data_train[:,1:]
-    X_test = data_test_val[:,1:]
+    with open(f_name+'_TRAIN', newline='') as csvfile:
+        imported_data = list(csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC))
+    interpolated_input = []
+    for row in imported_data:
+        if (len(row) != NEWLEN):
+            interpolated_input.append(interpolate_signal(np.array(row),NEWLEN))
+    arr = np.array(interpolated_input)
+    _X_train = arr[:,1:]
     # get labels (numerical, not one-hot encoded)
-    y_train = data_train[:,0]
-    y_test = data_test_val[:,0]
+    y_train = arr[:,0]
+
+    with open(f_name+'_TEST', newline='') as csvfile:
+        imported_data = list(csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC))
+    interpolated_input = []
+    for row in imported_data:
+        if (len(row) != NEWLEN):
+            interpolated_input.append(interpolate_signal(np.array(row),NEWLEN))
+    arr = np.array(interpolated_input)
+    _X_test = arr[:,1:]
+    y_test = arr[:,0]
+
+    #data_train = np.loadtxt(f_name+'_TRAIN',delimiter=',')
+    #data_test_val = np.loadtxt(f_name+'_TEST',delimiter=',')
+    # get data
+    if ((NEWLEN - 1) != _X_train.shape[1]):
+        X_train = np.empty([_X_train.shape[0],NEWLEN])
+        X_test = np.empty([_X_test.shape[0],NEWLEN])
+        idx = 0
+        for subar in _X_train:
+            _tmp = interpolate_signal(subar,NEWLEN)
+            X_train[idx] = _tmp
+            idx = idx + 1
+        idx = 0
+        for subar in _X_test:
+            _tmp = interpolate_signal(subar,NEWLEN)
+            X_test[idx] = _tmp
+            idx = idx + 1
+    else:
+        X_train = _X_train
+        X_test = _X_test
 
     return X_train, X_test, y_train, y_test
 

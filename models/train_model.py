@@ -26,7 +26,7 @@ def train(train_loader, val_loader, DTANargs, Experiment, print_model=False):
     channels, input_shape = train_loader.dataset[0][0].shape
 
     model = DTAN(input_shape, channels, tess=[DTANargs.tess_size,], n_recurrence=DTANargs.n_recurrences,
-                    zero_boundary=DTANargs.zero_boundary, device='gpu').to(device)
+                    zero_boundary=DTANargs.zero_boundary, device='cpu').to(device)
 
     DTANargs.T = model.get_basis()
     optimizer = optim.Adam(model.parameters(), lr=Experiment.lr)
@@ -56,7 +56,7 @@ def train(train_loader, val_loader, DTANargs, Experiment, print_model=False):
 
 
     # Load best model based on validation loss
-    checkpoint = torch.load(f'../checkpoints/{Experiment.exp_name}_checkpoint.pth')
+    checkpoint = torch.load(f'../../checkpoints/{Experiment.exp_name}_checkpoint.pth')
 
 
     return model
@@ -137,4 +137,4 @@ def _save_checkpoint(model, optimizer, test_loss, exp_name=''):
                   'loss': test_loss
                   }
 
-    torch.save(checkpoint, f'../checkpoints/{exp_name}_checkpoint.pth')
+    torch.save(checkpoint, f'../../checkpoints/{exp_name}_checkpoint.pth')

@@ -6,7 +6,8 @@ author: ronsha
 import torch
 import torch.nn as nn
 from .libcpab import Cpab
-
+from matplotlib import pyplot as plt 
+import numpy as np
 
 def get_locnet(channels):
     # Spatial transformer localization-network
@@ -91,6 +92,11 @@ class DTAN(nn.Module):
 
     def forward(self, x, return_theta=False):
         # transform the input
+        back_x = x
+        identity = np.arange(32000)
+        identity= identity.reshape(40,800)
+        X_tensor = torch.Tensor(identity)
+        #x = X_tensor
         thetas = []
         for i in range(self.n_recurrence):
             if not return_theta:
@@ -98,6 +104,20 @@ class DTAN(nn.Module):
             else:
                 x, theta = self.stn(x, return_theta)
                 thetas.append(theta)
+
+        #np_tensor_back_x = back_x.detach().numpy()
+        #np_tensor_x = x.detach().numpy()
+        #print("back_x:",np_tensor_back_x, "x:", np_tensor_x)
+        #
+        #np_tensor_back_x1 = np_tensor_back_x.reshape(40,800)
+        #np_tensor_x1 = np_tensor_x.reshape(40,800)
+        #for i in range(4):
+        #    plt.plot(np_tensor_back_x1[i]) 
+        #    plt.plot(np_tensor_x1[i]) 
+        #    plt.plot(back_x.detach().numpy()) 
+        #    plt.plot(x.detach().numpy()) 
+        #    plt.show()
+
         if not return_theta:
             return x
         else:

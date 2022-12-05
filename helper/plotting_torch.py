@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 import torch
@@ -44,6 +45,7 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
     title_font = 18
     rows = 2
     cols = 2
+    epoch_time = int(time.time())
     # plot each channel
     for channel in range(n_channels):
         plot_idx = 1
@@ -54,6 +56,11 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
         ax1.plot(X_within_class[:, channel,:].T)
         plt.tight_layout()
         plt.xlim(0, signal_len)
+        tosaveMisaligned = X_aligned_within_class[:, channel,:].T
+        
+        tosaveMisaligned1 = tosaveMisaligned.reshape(10,800)
+        
+        np.savetxt(f'C:/tmp/{epoch_time}_X_within_class.txt', tosaveMisaligned1, delimiter=',', fmt='%d')
 
         if n_channels == 1:
             #plt.title("%d random test samples" % (N))
@@ -90,16 +97,21 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
         ax3.plot(X_aligned_within_class[:, channel,:].T)
         plt.title("DTAN aligned signals", fontsize=title_font)
         plt.xlim(0, signal_len)
-
+        tosaveAligned = X_aligned_within_class[:, channel,:].T
+        
+        tosaveAligned1 = tosaveAligned.reshape(10,800)
+        
+        np.savetxt(f'C:/tmp/{epoch_time}_X_aligned_within_class.txt', tosaveAligned1, delimiter=',', fmt='%d')
         plot_idx += 1
 
         # Aligned Mean
         if channel == 0:
             ax4 = f.add_subplot(rows, cols, plot_idx)
         # plot transformed signal
-        #ax4.plot(t, X_mean_t[channel,:], label=f'Average signal-channel:{channel}')
+        ax4.plot(t, X_mean_t[channel,:])
         if n_channels == 1:
             ax4.fill_between(t, upper_t[channel], lower_t[channel], color='#539caf', alpha=0.6, label=r"$\pm\sigma$")
+        np.savetxt(f'C:/tmp/{epoch_time}_X_mean_t{channel}.txt', X_mean_t[channel,:], delimiter=',', fmt='%d')
 
 
         plt.legend(loc='upper right', fontsize=12, frameon=True)
@@ -107,12 +119,19 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
         plt.xlim(0, signal_len)
         plt.tight_layout()
         plot_idx += 1
-
-    plt.savefig(f'{int(class_num)}_{dataset_name}.pdf', format='pdf')
+#Ttosavealign = X_aligned_within_class[:, channel,:].T
+#
+#Ttosavealign1 = Ttosavealign.reshape(10,800)
+#
+#np.savetxt('C:/tmp/Talined.txt', Ttosavealign1, delimiter=',', fmt='%d')
+        
+    
+    plt.savefig(f'{epoch_time}_{int(class_num)}_{dataset_name}.pdf', format='pdf')
 
     plt.suptitle(f"{dataset_name}: class-{class_num}", fontsize=title_font+2)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
+    print("Done")
 
 
 def plot_signals(model, device, datadir, dataset_name):
