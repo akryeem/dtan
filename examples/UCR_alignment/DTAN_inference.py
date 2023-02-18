@@ -138,13 +138,13 @@ def split_signal2iterations(data, ex_num):
         ##from the beginning until that point (min peak before the current one)
         if (min_indices[min_idx-1] <= max_indices[0]):
             data = data[min_indices[min_idx-1]:]
-            data = my_inter(data, SIGNAL_LENGTH)
+            #data = my_inter(data, SIGNAL_LENGTH)
             return split_signal2iterations(data, ex_num)
         ##the last min index is not the last point in the series, we remove all the points after it (it's a redundant tail)
         if (min_indices[-1] != len(data)-1):
             print("removing redundant tail")
             data = data[:min_indices[-1]]
-            data = my_inter(data, SIGNAL_LENGTH)
+            #data = my_inter(data, SIGNAL_LENGTH)
             return split_signal2iterations(data, ex_num)
 
         while (min_idx < len(min_indices) and max_idx < len(max_indices)):
@@ -201,13 +201,13 @@ def split_signal2iterations(data, ex_num):
         ##from the beginning until that point (min peak before the current one)
         if (max_indices[max_idx-1] <= min_indices[0]):
             data = data[max_indices[max_idx-1]:]
-            data = my_inter(data, SIGNAL_LENGTH)
+            #data = my_inter(data, SIGNAL_LENGTH)
             return split_signal2iterations(data, ex_num)
         ##the last min index is not the last point in the series, we remove all the points after it (it's a redundant tail)
         if (max_indices[-1] != len(data)-1):
             print("removing redundant tail")
             data = data[:max_indices[-1]]
-            data = my_inter(data, SIGNAL_LENGTH)
+            #data = my_inter(data, SIGNAL_LENGTH)
             return split_signal2iterations(data, ex_num)
 
         while (max_idx < len(max_indices) and min_idx < len(min_indices)):
@@ -267,7 +267,7 @@ def split_signal2iterations(data, ex_num):
         plt.legend()
         plt.show()
 
-    return iterations
+    return iterations, split_list
 
 #https://stackoverflow.com/questions/9542738/python-find-in-list
 #https://stackoverflow.com/questions/2566412/find-nearest-value-in-numpy-array
@@ -450,7 +450,9 @@ def inference(args, dataset_name="ECGFiveDays"):
 
     interpolated_X_test = []
     
-    iterations = split_signal2iterations(my_inter(X_test[0], input_shape), ex_num)
+    iterations, split_list = split_signal2iterations(X_test[0].reshape(X_test[0].size), ex_num)
+    split_list = np.insert(split_list, 0, 0.)
+    #iterations = split_signal2iterations(my_inter(X_test[0], input_shape), ex_num)
     if (iterations == 0):
         feature_vec = [-9999, 9999, 9999, -9999, -9999, 9999, 9999, 9999, 9999, 9999]
         if (FWRITE_ENABLED):
@@ -584,13 +586,18 @@ def inference(args, dataset_name="ECGFiveDays"):
 ##do it again on the angles signal that we can generate here
     ##left side is odd, right side is even which is joint+1 e.g. left_hip=23, right_hip=24=left_hip+1
     side = scores_dict[patient_name][0]
-    joint_positions = gen_feature(f"{datadir}/{patient_name}_f{ex_num}_landmarks.json", joint0=23+side, 
+    knee_angle = np.array(gen_feature(f"{datadir}/{patient_name}_f{ex_num}_landmarks.json", joint0=23+side, 
                                                                                         joint1=25+side,
-                                                                                        joint2=27+side)
-    stability_measure = np.mean(joint_positions)
+                                                                                        joint2=27+side))
+    best_iteration_angles = knee_angle[split_list[min_iter]:split_list[min_iter+1]]
+    best_iteration_angles = my_inter(best_iteration_angles, SIGNAL_LENGTH)
 
+    #now, calculate the mean knee angle in the interval between reaching the bed and starting to go down
+    knee_angle_mean = np.mean(best_iteration_angles[on_bed_start_end_idx[min_iter][0]:on_bed_start_end_idx[min_iter][1]])
+    ##consider adding a feature of the time/histogram of angles > 150 (REGEL YESHARA) or number of frames the 
+    ##leg was straight
     
-    feature_vec = [speed, std_mean[min_iter], min(interpolated_X_test[min_iter]), max(interpolated_X_test[min_iter]),
+    feature_vec = [speed, std_mean[min_iter], knee_angle_mean, min(interpolated_X_test[min_iter]), max(interpolated_X_test[min_iter]),
                   (sum(speeds)/len(speeds)), (sum(std_mean)/len(std_mean))]
     #T#for joint in [11,12,23,24]:
     #T#    joint_positions = gen_feature(f"{datadir}/{patient_name}_f{ex_num}_landmarks.json", joint0=joint)
