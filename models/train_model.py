@@ -22,7 +22,8 @@ def train(train_loader, val_loader, DTANargs, Experiment, print_model=False):
     """
 
     # Init DTAN class
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
     channels, input_shape = train_loader.dataset[0][0].shape
 
     model = DTAN(input_shape, channels, tess=[DTANargs.tess_size,], n_recurrence=DTANargs.n_recurrences,

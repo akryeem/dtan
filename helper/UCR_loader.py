@@ -32,7 +32,7 @@ def load_txt_file(datadir, dataset):
     Loads UCR text format - useful when working with the data provided by the UCR archivce site. 
     returns numpy array [N_samples,Width,Channels]
     '''
-    NEWLEN = 801
+    SIGNAL_LENGTH = 800
 
     fdir = os.path.join(datadir, dataset)
     assert os.path.isdir(fdir), f"{fdir}. {dataset} could not be found in {datadir}"
@@ -42,42 +42,48 @@ def load_txt_file(datadir, dataset):
         imported_data = list(csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC))
     interpolated_input = []
     for row in imported_data:
-        if (len(row) != NEWLEN):
-            interpolated_input.append(interpolate_signal(np.array(row),NEWLEN))
-    arr = np.array(interpolated_input)
-    _X_train = arr[:,1:]
+        if (len(row) != SIGNAL_LENGTH):
+            interpolated_input.append(interpolate_signal(np.array(row[1:]),SIGNAL_LENGTH))
+        else:
+            interpolated_input.append(np.array(row))
+    _X_train = np.array(interpolated_input)
+    #_X_train = arr[:,1:]
     # get labels (numerical, not one-hot encoded)
-    y_train = arr[:,0]
+    y_train = [item[0] for item in imported_data]
 
     with open(f_name+'_TEST', newline='') as csvfile:
         imported_data = list(csv.reader(csvfile, quoting=csv.QUOTE_NONNUMERIC))
     interpolated_input = []
     for row in imported_data:
-        if (len(row) != NEWLEN):
-            interpolated_input.append(interpolate_signal(np.array(row),NEWLEN))
-    arr = np.array(interpolated_input)
-    _X_test = arr[:,1:]
-    y_test = arr[:,0]
+        if (len(row) != SIGNAL_LENGTH):
+            interpolated_input.append(interpolate_signal(np.array(row[1:]),SIGNAL_LENGTH))
+        else:
+            interpolated_input.append(np.array(row))
+    _X_test = np.array(interpolated_input)
+    #_X_test = arr[:,1:]
+    y_test = [item[0] for item in imported_data]
 
     #data_train = np.loadtxt(f_name+'_TRAIN',delimiter=',')
     #data_test_val = np.loadtxt(f_name+'_TEST',delimiter=',')
     # get data
-    if ((NEWLEN - 1) != _X_train.shape[1]):
-        X_train = np.empty([_X_train.shape[0],NEWLEN])
-        X_test = np.empty([_X_test.shape[0],NEWLEN])
+    if ((SIGNAL_LENGTH) != _X_train.shape[1]):
+        X_train = np.empty([_X_train.shape[0],SIGNAL_LENGTH])
+        X_test = np.empty([_X_test.shape[0],SIGNAL_LENGTH])
         idx = 0
         for subar in _X_train:
-            _tmp = interpolate_signal(subar,NEWLEN)
+            _tmp = interpolate_signal(subar,SIGNAL_LENGTH)
             X_train[idx] = _tmp
             idx = idx + 1
         idx = 0
         for subar in _X_test:
-            _tmp = interpolate_signal(subar,NEWLEN)
+            _tmp = interpolate_signal(subar,SIGNAL_LENGTH)
             X_test[idx] = _tmp
             idx = idx + 1
     else:
         X_train = _X_train
         X_test = _X_test
+    y_train = np.round(y_train)
+    y_test = np.round(y_test)
 
     return X_train, X_test, y_train, y_test
 
@@ -178,6 +184,8 @@ def get_UCR_data(dataset_name, datadir=0, batch_size=32):
       X_train, X_test, y_train, y_test = load_txt_file(datadir, dataset_name)
     else:
       X_train, y_train, X_test, y_test = UCR_UEA_datasets().load_dataset(dataset_name)
+    y_train = np.round(y_train)
+    y_test = np.round(y_test)
     X_train, X_test, y_train, y_test = processed_UCR_data(X_train, X_test, y_train, y_test)
 
     input_shape, n_classes = get_dataset_info(dataset_name, X_train, X_test, y_train, y_test, print_info=True)
