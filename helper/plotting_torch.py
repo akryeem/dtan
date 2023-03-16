@@ -34,11 +34,20 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
     upper_t = X_mean_t + X_std_t
     lower_t = X_mean_t - X_std_t
     
-    msq_idx = 1
+    mse_idx = 1
+    mse_list = []
+    TOPLOT = 0
+    tt = range(input_shape[1])
     for msq_signal in X_aligned_within_class:
         mse = np.mean((X_mean_t - msq_signal) ** 2)
-        print(f"MSE for idx:{msq_idx} = {mse}")
-        msq_idx += 1
+        print(f"MSE for idx:{mse_idx} = {mse}")
+        if (TOPLOT == 1 and class_num == 2):
+            plt.plot(msq_signal[0], label=f"idx:{mse_idx-1} = {mse}")
+            plt.fill_between(tt, upper_t[0], lower_t[0], color='#539caf', alpha=0.6)
+            plt.legend()
+            plt.show()
+        mse_idx += 1
+        mse_list.append(mse)
     X_mean = np.mean(X_within_class, axis=0)
     X_std = np.std(X_within_class, axis=0)
     upper = X_mean + X_std
@@ -142,6 +151,7 @@ def plot_mean_signal(X_aligned_within_class, X_within_class, ratio, class_num, d
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     plt.show()
     print("Done")
+    return mse_list
 
 
 def plot_signals(model, device, datadir, dataset_name, epoch_time):
@@ -179,12 +189,15 @@ def plot_signals(model, device, datadir, dataset_name, epoch_time):
                 X_within_class = data_numpy[class_idx]
                 X_aligned_within_class = transformed_data_numpy[class_idx]
                 #print(X_aligned_within_class.shape, X_within_class.shape)
-                plot_mean_signal(X_aligned_within_class, X_within_class, ratio=[10,6],
+                label2_dist = plot_mean_signal(X_aligned_within_class, X_within_class, ratio=[10,6],
                                  class_num=label, dataset_name=f"{dataset_name}-{set_names[i]}", 
                                  epoch_time=f"{epoch_time}_{dataset_name}")
+                if (label == 2 and set_names[i] == 'train'):
+                    label2_mse = label2_dist
     # Merges all the pdf files in current directory
     merger = PdfFileMerger()
     allpdfs = glob(f'{epoch_time}_{dataset_name}/*.pdf')
     [merger.append(pdf) for pdf in allpdfs]
     with open(f'{epoch_time}_{dataset_name}/{dataset_name}.pdf', 'wb') as new_file:
         merger.write(new_file)
+    return label2_mse

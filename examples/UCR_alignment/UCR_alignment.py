@@ -19,6 +19,8 @@ This is possible by simply uncommenting the relevant lines.
 """
 import os
 import sys
+import time
+
 module_path = os.path.abspath(os.path.join('..\\..'))
 module_path1 = os.path.abspath(os.path.join('..\\..\\..'))
 module_path2 = os.path.abspath(os.path.join('..\\..\\DTAN'))
@@ -47,7 +49,7 @@ from helper.UCR_loader import processed_UCR_data, load_txt_file
 
 def argparser():
     parser = argparse.ArgumentParser(description='Process args')
-    parser.add_argument('--dataset', type=str, default='ECGFiveDays')
+    parser.add_argument('--dataset', type=str, default='ALL')
     parser.add_argument('--tess_size', type=int, default=16,
                         help="CPA velocity field partition")
     parser.add_argument('--smoothness_prior', default=True,
@@ -174,7 +176,36 @@ def inference(args, dataset_name="ECGFiveDays"):
     #plt.plot(X_test[0][0], color ="red")
     plt.show()
 
-def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
+def move_lines(file_path, move_file_path, line_nums):
+    labels0_1 = []
+    with open(file_path, 'r') as f, open(move_file_path, 'a') as move_file:
+        lines = f.readlines()
+        for elem in lines:
+            if elem[0] != '2':
+                labels0_1.append(elem)
+                lines.remove(elem)
+        for num in sorted(line_nums, reverse=True):
+            if num < len(lines):
+                floats = [float(x) for x in lines[num][2:-1].split(',')]
+                plt.plot(floats)
+                plt.show()
+                move_file.write(lines[num])
+                del lines[num]
+            else:
+                print("ERRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRRORRRRRRRRRRRRRRRRRRRRR")
+    with open(file_path, 'w') as f:
+        f.writelines(labels0_1)
+        f.writelines(lines)
+
+
+## Example usage
+#file_path = 'text_file.txt'
+#move_file_path = 'moved_lines.txt'
+#line_nums = [2, 5, 8] # line numbers to remove and move
+#move_lines(file_path, move_file_path, line_nums)
+
+
+def run_UCR_alignment(args, dataset_name="ECGFiveDays", attempt = 0):
     """
     Run an example of the full training pipline for DTAN on a UCR dataset.
     After training:
@@ -192,7 +223,8 @@ def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
 
     # Data
     datadir = args.dpath #"data/UCR/UCR_TS_Archive_2015"
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
     exp_name = f"{dataset_name}_exp"
     # Plotting flag
     plot_signals_flag = True
@@ -218,17 +250,34 @@ def run_UCR_alignment(args, dataset_name="ECGFiveDays"):
     train_loader, validation_loader, test_loader = get_UCR_data(dataset_name=dataset_name,
                                                                 datadir=datadir,
                                                                 batch_size=Experiment.batch_size)
-    X_train, X_test, y_train, y_test = load_txt_file(datadir, dataset_name)
-    X_train, X_test, y_train, y_test = processed_UCR_data(X_train, X_test, y_train, y_test)
-
+    #X_train, X_test, y_train, y_test = load_txt_file(datadir, dataset_name)
+    #X_train, X_test, y_train, y_test = processed_UCR_data(X_train, X_test, y_train, y_test)
+    epoch_time = int(time.time())
+    AK_LOAD_MODEL = 0
     ## Train model
-    model = train(train_loader, validation_loader, DTANargs, Experiment, print_model=True)
-    torch.save(model.state_dict(), f'../../checkpoints/ex234_modelstate_dict.pth')
-    #torch.save(model, f'../../checkpoints/identity_model.pth')
-    # Plot aligned signals
+    if (AK_LOAD_MODEL == 0):
+        model = train(train_loader, validation_loader, DTANargs, Experiment, print_model=True)
+        torch.save(model.state_dict(), f'../../checkpoints/{epoch_time}_{dataset_name}_modelstate_dict.pth')
+    else:
+        device = 'cpu'
+        channels, input_shape = train_loader.dataset[0][0].shape
+        model = DTAN(input_shape, channels, tess=[DTANargs.tess_size,], n_recurrence=DTANargs.n_recurrences,
+                        zero_boundary=DTANargs.zero_boundary, device=device).to(device)
+        model.load_state_dict(torch.load('../../checkpoints/1678056636_ex1516_manual_modelstate_dict.pth'))
+        model.eval()
     if plot_signals_flag:
-        # Plot test data
-        plot_signals(model, device, datadir, dataset_name)
+        label2_mse = plot_signals(model, device, datadir, dataset_name, epoch_time)
+        # generate list of indexes of values greater than X
+        X = 150
+        large_mse = [i for i in range(len(label2_mse)) if label2_mse[i] > X]
+        if len(large_mse) > 0 and attempt < 3:
+            fdir = os.path.join(datadir, dataset_name)
+            assert os.path.isdir(fdir), f"{fdir}. {dataset_name} could not be found in {datadir}"
+            # again, for file names
+            f_name_TRAIN = os.path.join(fdir, dataset_name+'_TRAIN')
+            f_name_TEST = os.path.join(fdir, dataset_name+'_TEST')
+            move_lines(f_name_TRAIN, f_name_TEST, large_mse)
+            run_UCR_alignment(args, dataset_name, attempt = (attempt+1))
 
 
 

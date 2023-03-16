@@ -43,7 +43,8 @@ def torch_dist_mat(centers):
 
 # Domain space is [0,1]^dim where 0.5 is the origin
 def smoothness_norm(T, theta, lambda_smooth=0.5, lambda_var=0.1, print_info=False):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    #device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device = torch.device("cpu" if torch.cuda.is_available() else "cpu")
 
     D, d = T.get_basis().shape
     B = T.get_basis()
